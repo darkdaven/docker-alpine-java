@@ -20,25 +20,26 @@ ENV JAVA_VERSION_MAJOR=10 \
     LANG=C.UTF-8
 
 # do all in one step
-RUN set -ex && \
-    [[ ${JAVA_VERSION_MAJOR} != 7 ]] || ( echo >&2 'Oracle no longer publishes JAVA7 packages' && exit 1 ) && \
-    apk -U upgrade && \
-    apk add libstdc++ curl ca-certificates bash && \
-    for pkg in glibc-${GLIBC_VERSION} glibc-bin-${GLIBC_VERSION} glibc-i18n-${GLIBC_VERSION}; do curl -sSL ${GLIBC_REPO}/releases/download/${GLIBC_VERSION}/${pkg}.apk -o /tmp/${pkg}.apk; done && \
-    apk add --allow-untrusted /tmp/*.apk && \
-    rm -v /tmp/*.apk && \
-    ( /usr/glibc-compat/bin/localedef --force --inputfile POSIX --charmap UTF-8 C.UTF-8 || true ) && \
-    echo "export LANG=C.UTF-8" > /etc/profile.d/locale.sh && \
-    /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib && \
-    mkdir /opt && \
-    curl -jksSLH "Cookie: oraclelicense=accept-securebackup-cookie" -o /tmp/java.tar.gz \
-    http://download.oracle.com/otn-pub/java/jdk/${JAVA_VERSION_MAJOR}.${JAVA_VERSION_MINOR}+${JAVA_VERSION_BUILD}/19aef61b38124481863b1413dce1855f/${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}.${JAVA_VERSION_MINOR}_linux-x64_bin.tar.gz && \
-    JAVA_PACKAGE_SHA256=$(curl -sSL https://www.oracle.com/webfolder/s/digest/${JAVA_VERSION_MAJOR}-${JAVA_VERSION_MINOR_CHECKSUM}checksum.html | grep "${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}.${JAVA_VERSION_MINOR}-linux-x64_bin.tar.gz" | grep -Eo '(sha256: )[^<]+' | cut -d: -f2 | xargs) && \
-    echo "${JAVA_PACKAGE_SHA256} /tmp/java.tar.gz" > /tmp/java.tar.gz.sha256 && \
-    gunzip /tmp/java.tar.gz && \
-    tar -C /opt -xf /tmp/java.tar && \
-    ln -s /opt/jdk-${JAVA_VERSION_MAJOR}.${JAVA_VERSION_MINOR} /opt/jdk && \
-    apk del curl glibc-i18n && \
-    rm -rf /tmp/* /var/cache/apk/* && \
-    echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf
+RUN set -ex
+RUN command [[ ${JAVA_VERSION_MAJOR} != 7 ]] || ( echo >&2 'Oracle no longer publishes JAVA7 packages' && exit 1 )
+RUN apk -U upgrade
+RUN apk add libstdc++ curl ca-certificates bash
+RUN for pkg in glibc-${GLIBC_VERSION} glibc-bin-${GLIBC_VERSION} glibc-i18n-${GLIBC_VERSION}; do curl -sSL ${GLIBC_REPO}/releases/download/${GLIBC_VERSION}/${pkg}.apk -o /tmp/${pkg}.apk; done
+RUN apk add --allow-untrusted /tmp/*.apk
+RUN rm -v /tmp/*.apk
+RUN ( /usr/glibc-compat/bin/localedef --force --inputfile POSIX --charmap UTF-8 C.UTF-8 || true )
+RUN echo "export LANG=C.UTF-8" > /etc/profile.d/locale.sh
+RUN /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib
+RUN mkdir /opt
+RUN curl -jksSLH "Cookie: oraclelicense=accept-securebackup-cookie" -o /tmp/java.tar.gz \
+    http://download.oracle.com/otn-pub/java/jdk/${JAVA_VERSION_MAJOR}.${JAVA_VERSION_MINOR}+${JAVA_VERSION_BUILD}/19aef61b38124481863b1413dce1855f/${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}.${JAVA_VERSION_MINOR}_linux-x64_bin.tar.gz
+RUN JAVA_PACKAGE_SHA256=$(curl -sSL https://www.oracle.com/webfolder/s/digest/${JAVA_VERSION_MAJOR}-${JAVA_VERSION_MINOR_CHECKSUM}checksum.html | grep "${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}.${JAVA_VERSION_MINOR}-linux-x64_bin.tar.gz" | grep -Eo '(sha256: )[^<]+' | cut -d: -f2 | xargs)
+RUN echo "${JAVA_PACKAGE_SHA256} /tmp/java.tar.gz" > /tmp/java.tar.gz.sha256
+RUN sha256sum -c /tmp/java.tar.gz.sha256
+RUN gunzip /tmp/java.tar.gz
+RUN tar -C /opt -xf /tmp/java.tar
+RUN ln -s /opt/jdk-${JAVA_VERSION_MAJOR}.${JAVA_VERSION_MINOR} /opt/jdk
+RUN apk del curl glibc-i18n
+RUN rm -rf /tmp/* /var/cache/apk/*
+RUN echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf
 # EOF
