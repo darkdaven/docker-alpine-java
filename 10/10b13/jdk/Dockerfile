@@ -1,5 +1,5 @@
 # AlpineLinux with a glibc-2.28-r0 and Oracle Java 8
-FROM alpine:3.8
+FROM alpine:3.7
 
 LABEL MAINTAINER="Jose Ariel Herrera <darkdaven87@gmail.com>"
 # thanks to Vladimir Krivosheev <develar@gmail.com> aka @develar for smaller image
